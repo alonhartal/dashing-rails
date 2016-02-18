@@ -8,13 +8,18 @@ module Dashing
     rescue_from ActionView::MissingTemplate, with: :template_not_found
 
     def show
+      last_snapshot = Dashing.redis.hgetall("last_snapshot")
+      Dashing.redis.publish("#{Dashing.config.redis_namespace}.create", last_snapshot.to_json) if last_snapshot
+
       render file: widget_path, layout: false
     end
 
     def update
       data = params[:widget] || {}
       hash = data.merge(id: params[:name], updatedAt: Time.now.utc.to_i)
+
       Dashing.redis.publish("#{Dashing.config.redis_namespace}.create", hash.to_json)
+      Dashing.redis.hmset("last_snapshot", hash.flatten)
 
       render nothing: true
     end
