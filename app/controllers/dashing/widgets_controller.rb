@@ -4,22 +4,18 @@ module Dashing
     before_filter :check_accessibility, only: :update
     before_filter :check_widget_name,   only: [:show, :update]
     before_filter :prepend_view_paths,  only: :show
+    skip_before_action :authenticate_user_from_token! only: [:update]
 
     rescue_from ActionView::MissingTemplate, with: :template_not_found
 
     def show
-      last_snapshot = Dashing.redis.hgetall("last_snapshot")
-      Dashing.redis.publish("#{Dashing.config.redis_namespace}.create", last_snapshot.to_json) if last_snapshot
-
       render file: widget_path, layout: false
     end
 
     def update
       data = params[:widget] || {}
       hash = data.merge(id: params[:name], updatedAt: Time.now.utc.to_i)
-
       Dashing.redis.publish("#{Dashing.config.redis_namespace}.create", hash.to_json)
-      Dashing.redis.hmset("last_snapshot", hash.flatten)
 
       render nothing: true
     end
