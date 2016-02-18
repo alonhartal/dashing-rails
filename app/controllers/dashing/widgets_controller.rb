@@ -4,7 +4,7 @@ module Dashing
     before_filter :check_accessibility, only: :update
     before_filter :check_widget_name,   only: [:show, :update]
     before_filter :prepend_view_paths,  only: :show
-    skip_before_action :authenticate_user_from_token!, only: :update
+    skip_before_action :authentication_with_devise, only: :update
 
     rescue_from ActionView::MissingTemplate, with: :template_not_found
 
